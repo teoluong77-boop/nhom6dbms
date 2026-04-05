@@ -18,7 +18,13 @@
             flex-direction: column; height: 100vh; font-size: 12px; color: #333;
         }
 
-        /* --- THIẾT KẾ ĐẦU TRANG --- */
+        /* FIX CHO ĐIỆN THOẠI: TỰ NHẢY DÒNG KHI MÀN HÌNH NHỎ */
+        @media (max-width: 900px) {
+            .main-layout { grid-template-columns: 1fr !important; display: block !important; overflow-y: auto !important; }
+            #leftCol, #rightCol { overflow-y: visible !important; height: auto !important; padding: 10px !important; }
+            .modal-box { width: 90% !important; padding: 20px !important; }
+        }
+
         header { 
             background: var(--blue); color: white; padding: 15px 40px; 
             display: flex; justify-content: space-between; align-items: center; 
@@ -416,16 +422,13 @@
         authMode = forced || (authMode === 'login' ? 'reg' : 'login');
         document.getElementById('authModal').style.display = 'flex';
         document.getElementById('modalTitle').innerText = (authMode === 'login' ? "🔐 ĐĂNG NHẬP" : "📝 ĐĂNG KÝ");
+        document.getElementById('switchText').innerText = (authMode === 'login' ? "Chưa có tài khoản? Đăng ký ngay" : "Đã có tài khoản? Đăng nhập");
     }
 
     function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
 
     async function handleSystemAuth() {
         const u = document.getElementById('uIn').value, p = document.getElementById('pIn').value;
-        const checkCustom = customUsers.find(user => user.u === u && user.p === p);
-        if(checkCustom) return loginSuccess(u, u, checkCustom.r);
-
-        // FIX LỖI: Kiểm tra các tài khoản hệ thống ngay cả khi Server lỗi (Offline Mode)
         const demoUsers = {
             'sieuthi': 'CHỦ',
             'nv1': 'NHÂN VIÊN',
@@ -443,14 +446,31 @@
                 if(authMode === 'reg') { alert("Thành công!"); toggleAuthMode('login'); return; }
                 const data = await res.json();
                 loginSuccess(u, data.fullName, demoUsers[u] || 'KHÁCH HÀNG');
-            } else alert("Sai thông tin!");
+            } else throw new Error();
         } catch (e) {
-            // FIX LỖI: Thêm loginSuccess() vào đây để thực sự ĐĂNG NHẬP vào hệ thống khi Offline
-            if (demoUsers[u]) {
-                alert("Offline Mode: Đã tự động đăng nhập tài khoản hệ thống.");
-                loginSuccess(u, u, demoUsers[u]);
+            // XỬ LÝ OFFLINE (SỬA LỖI ĐĂNG KÝ & ĐĂNG NHẬP Ở ĐÂY)
+            if (authMode === 'reg') {
+                if (!u || !p) return alert("Vui lòng nhập đủ tài khoản và mật khẩu!");
+                const exists = customUsers.find(user => user.u === u);
+                if (exists) return alert("Tên đăng nhập đã tồn tại!");
+                
+                customUsers.push({ u: u, p: p, r: 'KHÁCH HÀNG' });
+                localStorage.setItem('n6_u_v81', JSON.stringify(customUsers));
+                alert("Đăng ký thành công (Offline)!");
+                toggleAuthMode('login');
             } else {
-                alert("Server không phản hồi và tài khoản không có trong danh sách Offline!");
+                // Kiểm tra tài khoản hệ thống
+                if (demoUsers[u]) {
+                    alert("Offline Mode: Đã tự động đăng nhập tài khoản hệ thống.");
+                    return loginSuccess(u, u, demoUsers[u]);
+                }
+                // Kiểm tra tài khoản vừa đăng ký offline
+                const found = customUsers.find(user => user.u === u && user.p === p);
+                if (found) {
+                    alert("Đăng nhập thành công!");
+                    return loginSuccess(found.u, found.u, found.r);
+                }
+                alert("Thông tin sai hoặc Server không phản hồi!");
             }
         }
     }
@@ -517,7 +537,6 @@
             let priceDisplay = `${p.price.toLocaleString()}đ`;
             let timerHtml = '';
 
-            // LOGIC HIỂN THỊ TIMER KHUYẾN MÃI
             if(p.discount > 0) {
                 const salePrice = p.price * (1 - p.discount/100);
                 priceDisplay = `<del style="color:#999; font-size:10px;">${p.price.toLocaleString()}đ</del><br><b>${salePrice.toLocaleString()}đ</b> <span class="sale-tag">-${p.discount}%</span>`;
@@ -536,7 +555,6 @@
         renderAuditTable();
     }
 
-    // BOT tự động gỡ khuyến mãi khi hết giờ
     function checkSaleExpirations() {
         const now = Date.now();
         let changed = false;
@@ -545,17 +563,15 @@
                 p.discount = 0;
                 p.saleEndTime = null;
                 changed = true;
-                console.log(`Hệ thống: Đã gỡ khuyến mãi cho ${p.name} do hết hạn.`);
             }
         });
         if (changed) {
             saveAndSyncAll();
         } else {
-            renderMasterProductTable(); // Cập nhật đồng hồ đếm ngược mỗi giây
+            renderMasterProductTable(); 
         }
     }
 
-    // --- MODULE: ANALYTICS (CHỦ) ---
     function renderOwnerAnalytics() {
         const sortedProducts = [...products].sort((a, b) => b.sold - a.sold);
         const top5 = sortedProducts.slice(0, 5);
@@ -596,15 +612,12 @@
         const p = products.find(x => x.id === id);
         p.price = parseInt(document.getElementById('editPriceInput').value);
         p.discount = parseInt(document.getElementById('editSaleInput').value);
-        
-        // Cập nhật thời gian kết thúc khuyến mãi
         const hours = parseFloat(document.getElementById('editSaleDurationInput').value);
         if (p.discount > 0 && !isNaN(hours) && hours > 0) {
             p.saleEndTime = Date.now() + (hours * 3600 * 1000);
         } else if (p.discount === 0) {
             p.saleEndTime = null;
         }
-
         saveAndSyncAll();
         document.getElementById('ownerEditModal').style.display = 'none';
     }
@@ -617,7 +630,7 @@
 
     function executeSaveProduct() {
         const id = document.getElementById('addIdInput').value, name = document.getElementById('addNameInput').value, cost = parseInt(document.getElementById('addImportPrice').value), sell = parseInt(document.getElementById('addPriceInput').value), qty = parseInt(document.getElementById('addQtyInput').value), hsd = document.getElementById('addHsdInput').value;
-        if(!id || !name || isNaN(cost) || !hsd) return alert("Vui lòng điền đủ thông tin!");
+        if(!id || !name || isNaN(cost) || !hsd) return alert("Nhập đủ thông tin!");
         const totalCost = cost * qty;
         products.push({ id, name, price: sell, cost, stock: qty, imported: qty, sold: 0, hsd, discount: 0, saleEndTime: null });
         currentFundBalance -= totalCost;
@@ -668,7 +681,6 @@
         saveAndSyncAll();
     }
 
-    // --- MODULE: GIỎ HÀNG ---
     function addItemToCart(id) {
         if(activeUser.role === 'GUEST') return toggleAuthMode('login');
         const p = products.find(x => x.id === id); if(p.stock <= 0) return alert("Hết!");
@@ -763,7 +775,6 @@
     window.onload = () => { 
         renderMasterProductTable(); 
         calculateDetailedFinance(); 
-        // Bắt đầu chạy bot kiểm tra khuyến mãi mỗi giây
         setInterval(checkSaleExpirations, 1000);
     };
 </script>
