@@ -216,7 +216,7 @@
             </p>
         </div>
 
-        <button class="btn btn-add" style="width:100%; padding:18px; margin-top:25px; font-size:14px;" onclick="executeSaveProduct()">XÁC NHẬN NHẬP KHO & TRỪ VỐN</button>
+        <button class="btn btn-add" style="width:100%; padding:18px; margin-top:25px; font-size:14px;" onclick="executeSaveProduct()">XÁC NHẬP NHẬP KHO & TRỪ VỐN</button>
         <button class="btn" style="width:100%; margin-top:10px; background:#f1f3f5;" onclick="document.getElementById('addItemModal').style.display='none'">HỦY BỎ</button>
     </div>
 </div>
@@ -247,7 +247,7 @@
             <button class="btn" style="background:white; color:var(--blue); margin-right:12px;" onclick="toggleAuthMode('login')">ĐĂNG NHẬP</button>
             <button class="btn" style="background:transparent; color:white; border: 1.5px solid white;" onclick="toggleAuthMode('reg')">ĐĂNG KÝ</button>
         </div>
-        <button id="logoutBtn" class="btn" style="background:var(--red); color:white; display:none;" onclick="location.reload()">ĐĂNG XUẤT</button>
+        <button id="logoutBtn" class="btn btn-logout" style="display:none;" onclick="location.reload()">ĐĂNG XUẤT</button>
     </div>
 </header>
 
@@ -425,6 +425,15 @@
         const checkCustom = customUsers.find(user => user.u === u && user.p === p);
         if(checkCustom) return loginSuccess(u, u, checkCustom.r);
 
+        // FIX LỖI: Kiểm tra các tài khoản hệ thống ngay cả khi Server lỗi (Offline Mode)
+        const demoUsers = {
+            'sieuthi': 'CHỦ',
+            'nv1': 'NHÂN VIÊN',
+            'kt1': 'KẾ TOÁN',
+            'kho1': 'KHO',
+            'admin': 'ADMIN'
+        };
+
         try {
             const res = await fetch(`${API_ENDPOINT}${(authMode === 'login' ? '/login' : '/register')}`, {
                 method: 'POST', headers: {'Content-Type':'application/json'},
@@ -433,12 +442,17 @@
             if (res.ok) {
                 if(authMode === 'reg') { alert("Thành công!"); toggleAuthMode('login'); return; }
                 const data = await res.json();
-                let role = 'KHÁCH HÀNG';
-                if(u === 'sieuthi') role = 'CHỦ'; else if(u === 'nv1') role = 'NHÂN VIÊN';
-                else if(u === 'kt1') role = 'KẾ TOÁN'; else if(u === 'kho1') role = 'KHO'; else if(u === 'admin') role = 'ADMIN';
-                loginSuccess(u, data.fullName, role);
+                loginSuccess(u, data.fullName, demoUsers[u] || 'KHÁCH HÀNG');
             } else alert("Sai thông tin!");
-        } catch (e) { alert("Offline Mode: Đã tự động đăng nhập tài khoản hệ thống."); }
+        } catch (e) {
+            // FIX LỖI: Thêm loginSuccess() vào đây để thực sự ĐĂNG NHẬP vào hệ thống khi Offline
+            if (demoUsers[u]) {
+                alert("Offline Mode: Đã tự động đăng nhập tài khoản hệ thống.");
+                loginSuccess(u, u, demoUsers[u]);
+            } else {
+                alert("Server không phản hồi và tài khoản không có trong danh sách Offline!");
+            }
+        }
     }
 
     function loginSuccess(u, name, role) {
@@ -603,7 +617,7 @@
 
     function executeSaveProduct() {
         const id = document.getElementById('addIdInput').value, name = document.getElementById('addNameInput').value, cost = parseInt(document.getElementById('addImportPrice').value), sell = parseInt(document.getElementById('addPriceInput').value), qty = parseInt(document.getElementById('addQtyInput').value), hsd = document.getElementById('addHsdInput').value;
-        if(!id || !name || isNaN(cost) || !hsd) return alert("Nhập đủ thông tin!");
+        if(!id || !name || isNaN(cost) || !hsd) return alert("Vui lòng điền đủ thông tin!");
         const totalCost = cost * qty;
         products.push({ id, name, price: sell, cost, stock: qty, imported: qty, sold: 0, hsd, discount: 0, saleEndTime: null });
         currentFundBalance -= totalCost;
