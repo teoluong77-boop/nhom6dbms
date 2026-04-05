@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SIEU THI NHOM 6 - ULTIMATE ERP v81 - FINANCE & PROMOTION</title>
+    <style>
+        /* --- HỆ THỐNG GIAO DIỆN DOANH NGHIỆP CAO CẤP (VERBOSE CSS) --- */
+        :root { 
+            --blue: #00448a; --green: #28a745; --red: #dc3545; 
+            --orange: #fd7e14; --gray: #6c757d; --light: #f8f9fa; 
+            --border: #dee2e6; --shadow: 0 10px 30px rgba(0,0,0,0.1);
+        }
+        
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; background: #f0f2f5; display: flex; 
+            flex-direction: column; height: 100vh; font-size: 12px; color: #333;
+        }
+
+        /* --- THIẾT KẾ ĐẦU TRANG --- */
+        header { 
+            background: var(--blue); color: white; padding: 15px 40px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            box-shadow: 0 4px 25px rgba(0,0,0,0.4); z-index: 2000;
+        }
+        .brand-box { display: flex; align-items: center; gap: 20px; }
+        .role-badge { 
+            background: #ffeb3b; color: #212529; padding: 6px 20px; 
+            border-radius: 30px; font-weight: 800; font-size: 11px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2); border: 1px solid #fbc02d;
+        }
+
+        /* --- BỐ CỤC CHÍNH --- */
+        .main-layout { 
+            display: grid; grid-template-columns: 1fr 540px; 
+            gap: 25px; padding: 25px; flex: 1; overflow: hidden; 
+        }
+        #leftCol, #rightCol { overflow-y: auto; height: 100%; padding-right: 10px; }
+        
+        /* --- THIẾT KẾ THẺ NỘI DUNG --- */
+        .card { 
+            background: white; padding: 25px; border-radius: 20px; 
+            box-shadow: var(--shadow); margin-bottom: 25px; 
+            border: 1px solid var(--border); transition: 0.3s;
+        }
+        .card:hover { transform: translateY(-3px); }
+        
+        h2 { 
+            color: var(--blue); border-left: 6px solid var(--blue); 
+            padding-left: 15px; margin: 0 0 20px 0; font-size: 16px; 
+            display: flex; justify-content: space-between; align-items: center; 
+            text-transform: uppercase; letter-spacing: 1px;
+        }
+
+        /* --- HỆ THỐNG BẢNG BIỂU --- */
+        table { width: 100%; border-collapse: collapse; background: white; margin-bottom: 15px; border-radius: 12px; overflow: hidden; }
+        th, td { padding: 14px 12px; border-bottom: 1px solid #f0f0f0; text-align: left; }
+        th { background: #f1f4f9; color: var(--blue); position: sticky; top: 0; z-index: 100; font-weight: 800; }
+        tr:hover { background: #f9fbff; }
+        
+        .table-recon { border: 1.5px solid var(--blue); }
+        .table-recon th { background: var(--blue); color: white; }
+        .table-acc { font-size: 11px; border: 1px solid #eee; margin-top: 10px; }
+        .table-acc th { background: #f1f3f5; color: #444; }
+
+        /* --- HỆ THỐNG NÚT BẤM --- */
+        .btn { 
+            border: none; padding: 10px 18px; border-radius: 8px; 
+            cursor: pointer; font-weight: bold; font-size: 11px; 
+            transition: all 0.2s ease; display: inline-flex; align-items: center; justify-content: center;
+        }
+        .btn-pay { background: var(--blue); color: white; width: 100%; padding: 18px; font-size: 16px; margin-top: 15px; box-shadow: 0 4px 10px rgba(0,68,138,0.3); }
+        .btn-add { background: var(--green); color: white; }
+        .btn-stock { background: #6c757d; color: white; padding: 5px 12px; font-size: 10px; margin-right: 5px; border-radius: 4px; }
+        .btn-del { color: var(--red); cursor: pointer; font-weight: bold; font-size: 18px; margin-left: 15px; }
+        .btn-edit { background: var(--orange); color: white; padding: 5px 10px; font-size: 10px; border-radius: 4px; }
+        .btn-reset { background: var(--red); color: white; margin-bottom: 10px; padding: 5px 15px; }
+
+        /* --- MODAL DESIGN --- */
+        .modal-overlay { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background: rgba(0,0,0,0.85); display: none; 
+            justify-content: center; align-items: center; z-index: 5000; 
+        }
+        .modal-box { 
+            background: white; padding: 40px; border-radius: 24px; 
+            width: 500px; box-shadow: 0 30px 80px rgba(0,0,0,0.6);
+        }
+        .modal-box label { font-weight: 700; color: #444; display: block; margin-top: 15px; }
+        .modal-box input, .modal-box select { 
+            width: 100%; padding: 14px; margin: 8px 0; 
+            border: 1px solid #cbd5e0; border-radius: 10px; box-sizing: border-box; font-size: 14px;
+        }
+
+        /* --- TIỆN ÍCH UI --- */
+        .status-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; margin-right: 8px; }
+        .online { background: #28a745; box-shadow: 0 0 10px #28a745; }
+        .offline { background: #adb5bd; }
+        .qr-box { background: #fff; border: 2px dashed var(--blue); padding: 20px; text-align: center; border-radius: 15px; margin-top: 15px; display: none; }
+        .bill-card { background: #f8fafc; border: 1px solid #e2e8f0; padding: 18px; margin-bottom: 15px; border-radius: 12px; }
+        
+        .balance-card-blue { background: linear-gradient(135deg, #00448a 0%, #0066cc 100%); color: white; padding: 30px; border-radius: 20px; text-align: center; }
+        .balance-card-green { background: linear-gradient(135deg, #1e7e34 0%, #28a745 100%); color: white; padding: 30px; border-radius: 20px; text-align: center; margin-bottom: 20px; }
+        
+        /* HIỆU ỨNG CẢNH BÁO HSD */
+        .warning-text { color: var(--red); font-weight: bold; animation: blinker 1s linear infinite; }
+        @keyframes blinker { 50% { opacity: 0.1; } }
+        .sale-tag { background: var(--red); color: white; padding: 2px 6px; border-radius: 4px; font-size: 10px; margin-left: 5px; font-weight: bold; }
+
+        /* MỚI: TAG THỜI GIAN KHUYẾN MÃI */
+        .timer-tag { background: var(--orange); color: white; padding: 3px 8px; border-radius: 5px; font-size: 9px; font-weight: bold; display: block; margin-top: 5px; text-align: center; animation: blinker 2s infinite; }
+
+        /* BIỂU ĐỒ CSS CHO CHỦ */
+        .chart-container { display: flex; align-items: flex-end; gap: 20px; height: 150px; border-bottom: 2px solid #ddd; padding-bottom: 5px; margin-top: 20px; justify-content: center; }
+        .chart-bar { width: 50px; border-radius: 5px 5px 0 0; position: relative; transition: height 0.5s; }
+        .bar-income { background: var(--green); }
+        .bar-expense { background: var(--red); }
+        .chart-label { position: absolute; bottom: -25px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; width: 60px; text-align: center; }
+        .chart-value { position: absolute; top: -20px; left: 50%; transform: translateX(-50%); font-size: 10px; font-weight: bold; width: 80px; text-align: center; }
+
+        @media print {
+            body * { visibility: hidden; }
+            #printArea, #printArea * { visibility: visible; }
+            #printArea { position: absolute; left: 0; top: 0; width: 100%; display: block !important; padding: 40px; color: black; font-family: 'Courier New', monospace; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- KHU VỰC IN BILL -->
+<div id="printArea" style="display:none;">
+    <div style="text-align:center;">
+        <h1 style="margin:0; font-size: 32px;">SIEU THI NHOM 6</h1>
+        <p>Hệ thống Quản lý ERP v81 - Supreme Finance</p>
+        <hr style="border: 1px solid black;">
+        <h2>HÓA ĐƠN THANH TOÁN</h2>
+        <p>Mã hóa đơn: <b id="pID"></b></p>
+        <p>Thời gian xuất: <span id="pTime"></span></p>
+    </div>
+    <table style="width:100%; margin-top:30px; border-bottom: 1px solid black;">
+        <thead><tr style="border-bottom: 2px solid black;"><th>Sản phẩm</th><th>SL</th><th>Đơn giá</th><th>Thành tiền</th></tr></thead>
+        <tbody id="pItemsBody"></tbody>
+    </table>
+    <div style="text-align:right; margin-top:30px;">
+        <h2 style="margin:0;">TỔNG CỘNG: <span id="pTotal"></span> VNĐ</h2>
+    </div>
+    <div style="text-align:center; margin-top:60px;">Cảm ơn quý khách và hẹn gặp lại!</div>
+</div>
+
+<!-- MODAL ADMIN: TẠO TÀI KHOẢN -->
+<div id="adminCreateModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2 style="color:var(--blue); border:none; text-align:center;">👤 CẤP TÀI KHOẢN NHÂN SỰ MỚI</h2>
+        <div style="margin-top:20px;">
+            <label>Tên đăng nhập (Username):</label>
+            <input type="text" id="newU" placeholder="Ví dụ: nhanvien_6">
+            <label>Mật khẩu bảo mật:</label>
+            <input type="password" id="newP" placeholder="Mật khẩu...">
+            <label>Phân quyền vai trò:</label>
+            <select id="newR">
+                <option value="NHÂN VIÊN">NHÂN VIÊN BÁN HÀNG</option>
+                <option value="KHO">QUẢN LÝ KHO</option>
+                <option value="KẾ TOÁN">KẾ TOÁN TRƯỞNG</option>
+                <option value="CHỦ">CHỦ SIÊU THỊ</option>
+                <option value="ADMIN">ADMIN HỆ THỐNG</option>
+            </select>
+            <button class="btn btn-add" style="width:100%; padding:15px; margin-top:20px;" onclick="handleAdminCreate()">XÁC NHẬN TẠO TÀI KHOẢN</button>
+            <button class="btn" style="width:100%; margin-top:10px; background:#f1f3f5;" onclick="document.getElementById('adminCreateModal').style.display='none'">HUỶ BỎ</button>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL CHỦ: CHỈNH SỬA GIÁ & KHUYẾN MÃI -->
+<div id="ownerEditModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2 style="color:var(--orange); border:none; text-align:center;">⚙️ CHỈNH SỬA GIÁ & KHUYẾN MÃI</h2>
+        <input type="hidden" id="editTargetId">
+        <label id="editNameLabel" style="text-align: center; color: var(--blue); font-weight: bold;"></label>
+        
+        <label>Giá bán niêm yết (VNĐ):</label>
+        <input type="number" id="editPriceInput">
+        
+        <label>Áp dụng giảm giá (%):</label>
+        <input type="number" id="editSaleInput" placeholder="Ví dụ: 10">
+
+        <!-- MỚI: THỜI GIAN KHUYẾN MÃI -->
+        <label>Thời gian giảm giá (số giờ từ bây giờ):</label>
+        <input type="number" id="editSaleDurationInput" placeholder="Ví dụ: 1 (nghĩa là 1 tiếng)">
+        
+        <button class="btn btn-add" style="width:100%; padding:15px; margin-top:20px;" onclick="saveOwnerProductEdits()">LƯU CẬP NHẬT</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:#f1f3f5;" onclick="document.getElementById('ownerEditModal').style.display='none'">ĐÓNG</button>
+    </div>
+</div>
+
+<!-- MODAL NHẬP HÀNG MỚI (CHỦ CỬA HÀNG) -->
+<div id="addItemModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2 style="color:var(--green); border:none; text-align:center;">➕ NHẬP HÀNG MỚI VÀO HỆ THỐNG</h2>
+        <label>Mã sản phẩm (ID):</label>
+        <input type="text" id="addIdInput" placeholder="Ví dụ: CRF-101">
+        <label>Tên sản phẩm:</label>
+        <input type="text" id="addNameInput" placeholder="Nhập tên hàng hóa...">
+        <label>Giá vốn nhập kho (đ):</label>
+        <input type="number" id="addImportPrice" placeholder="5000" oninput="updateFinancePreview()">
+        <label>Giá bán niêm yết (đ):</label>
+        <input type="number" id="addPriceInput" placeholder="25000">
+        <label>Số lượng nhập kho:</label>
+        <input type="number" id="addQtyInput" placeholder="10" oninput="updateFinancePreview()">
+        <label>Hạn sử dụng (HSD):</label>
+        <input type="date" id="addHsdInput">
+        
+        <div style="background:#fff3f3; padding:15px; border-radius:12px; margin-top:20px; border:1px solid #ffeeba;">
+            <p style="margin:0; color:var(--red); font-size:12px; font-weight:bold; text-align:center;">
+                ⚠️ QUY TRÌNH KẾ TOÁN: Sẽ trừ <span id="previewExpense">0</span>đ từ Quỹ ví tiền mặt.
+            </p>
+        </div>
+
+        <button class="btn btn-add" style="width:100%; padding:18px; margin-top:25px; font-size:14px;" onclick="executeSaveProduct()">XÁC NHẬN NHẬP KHO & TRỪ VỐN</button>
+        <button class="btn" style="width:100%; margin-top:10px; background:#f1f3f5;" onclick="document.getElementById('addItemModal').style.display='none'">HỦY BỎ</button>
+    </div>
+</div>
+
+<!-- MODAL ĐĂNG NHẬP -->
+<div id="authModal" class="modal-overlay">
+    <div class="modal-box">
+        <h2 id="modalTitle" style="border:none; text-align:center; font-size: 20px;">🔐 ĐĂNG NHẬP HỆ THỐNG ERP</h2>
+        <div style="margin-top:25px;">
+            <label>Tên đăng nhập:</label>
+            <input type="text" id="uIn" placeholder="Nhập tài khoản...">
+            <label>Mật khẩu bảo mật:</label>
+            <input type="password" id="pIn" placeholder="Nhập mật khẩu...">
+            <button class="btn btn-pay" onclick="handleSystemAuth()">XÁC NHẬN TRUY CẬP</button>
+            <p id="switchText" style="text-align:center; cursor:pointer; color:var(--blue); margin-top:20px; font-weight:700;" onclick="toggleAuthMode()"></p>
+            <button class="btn" style="width:100%; margin-top:10px; background:#f1f3f5;" onclick="closeAuthModal()">HUỶ BỎ</button>
+        </div>
+    </div>
+</div>
+
+<header>
+    <div class="brand-box">
+        <h1 id="shopTitleMain" style="margin:0; font-size: 22px; cursor: pointer;" onclick="location.reload()">🛒 SIEU THI NHOM 6</h1>
+        <span id="roleBadge" class="role-badge" style="display:none;"></span>
+    </div>
+    <div id="authSection">
+        <div id="guestDisplay">
+            <button class="btn" style="background:white; color:var(--blue); margin-right:12px;" onclick="toggleAuthMode('login')">ĐĂNG NHẬP</button>
+            <button class="btn" style="background:transparent; color:white; border: 1.5px solid white;" onclick="toggleAuthMode('reg')">ĐĂNG KÝ</button>
+        </div>
+        <button id="logoutBtn" class="btn" style="background:var(--red); color:white; display:none;" onclick="location.reload()">ĐĂNG XUẤT</button>
+    </div>
+</header>
+
+<div class="main-layout no-print">
+    <div id="leftCol">
+        <!-- ADMIN AREA -->
+        <div id="adminPanel" class="card" style="display:none;">
+            <h2>⚙️ Quản Trị Hệ Thống 
+                <button class="btn btn-add" style="margin-left: 20px;" onclick="document.getElementById('adminCreateModal').style.display='flex'">+ TẠO TÀI KHOẢN</button>
+            </h2>
+            <table class="table-acc">
+                <thead><tr><th>Tên User</th><th>Vai trò</th><th>Trạng thái</th><th>Thao tác</th></tr></thead>
+                <tbody id="adminUserTable"></tbody>
+            </table>
+            <button class="btn" style="background:var(--gray); color:white;" onclick="alert('Backup SQL Success!')">💾 SAO LƯU SQL</button>
+        </div>
+
+        <!-- OWNER ANALYTICS AREA -->
+        <div id="ownerStatsArea" class="card" style="display:none;">
+            <h2>📊 Dashboard Phân Tích (Chủ)</h2>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div style="background: #e3f2fd; padding: 15px; border-radius: 15px; border: 1px solid #bbdefb;">
+                    <h4 style="margin:0; color:var(--blue);">🏆 Top 5 Hàng Bán Chạy</h4>
+                    <ol id="bestSellersList" style="margin-top:10px; padding-left:20px; font-weight: bold;"></ol>
+                </div>
+                <div style="background: #f1f8e9; padding: 15px; border-radius: 15px; border: 1px solid #dcedc8;">
+                    <h4 style="margin:0; color:var(--green);">💹 Biểu đồ Thu - Chi (đ)</h4>
+                    <div class="chart-container" id="financeChart">
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KẾ TOÁN AREA -->
+        <div id="accountingArea" class="card" style="display:none;">
+            <h2>⚖️ Báo Cáo Tài Chính Kế Toán (Chốt Số)</h2>
+            <div style="margin-bottom: 30px;">
+                <div class="balance-card-green">
+                    <h4 style="margin:0; text-transform: uppercase;">1. Doanh Thu Tổng Tích Lũy</h4>
+                    <div style="font-size: 36px; font-weight:900; margin-top:10px;" id="totalAccumulatedRevenueDisp">0đ</div>
+                    <button class="btn btn-reset" style="margin-top:10px;" onclick="handleResetAccumulatedRevenue()">♻️ RESET DOANH THU TỔNG</button>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <div class="balance-card-blue">
+                    <h4 style="margin:0; text-transform: uppercase;">2. Số Dư Quỹ Thực Tế (Ví Tiền)</h4>
+                    <div style="font-size: 32px; font-weight:bold; margin-top:10px;" id="accNetBalanceDisp">0đ</div>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 30px;">
+                <h4 style="color:var(--blue); margin-bottom:10px;">3. Bảng Đối Chiếu Kho (Audit)</h4>
+                <table class="table-audit">
+                    <thead><tr><th>Tên hàng</th><th>Tổng Nhập</th><th>Tổng Bán</th><th>Tồn hiện tại</th></tr></thead>
+                    <tbody id="auditTableBody"></tbody>
+                </table>
+            </div>
+
+            <div style="margin-bottom: 25px;">
+                <h4 style="color:var(--red); margin-bottom:10px;">4. Nhật Ký Chi Tiêu (Tiền Ra)</h4>
+                <table class="table-acc">
+                    <thead><tr><th>Thời gian</th><th>Nội dung chi chi tiết</th><th>Số tiền</th></tr></thead>
+                    <tbody id="accExpenseTable"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- PRODUCT CATALOG -->
+        <div class="card">
+            <h2>📦 Danh Mục Sản Phẩm Hệ Thống
+                <button id="ownerAddBtn" class="btn btn-add" style="display:none;" onclick="document.getElementById('addItemModal').style.display='flex'">+ NHẬP HÀNG MỚI</button>
+                <input type="text" id="searchIn" style="width:180px; padding:8px; margin-left:20px; border-radius:8px; border:1.5px solid #eee;" placeholder="🔍 Tìm mã CRF-..." onkeyup="renderMasterProductTable()">
+            </h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Mã</th><th>Tên Mặt Hàng</th><th>Giá Bán</th><th>Tồn Kho</th>
+                        <th id="hsdHeadCol" style="display:none;">Hạn Dùng / Cảnh báo</th>
+                        <th>Thao Tác</th>
+                    </tr>
+                </thead>
+                <tbody id="productTableBody"></tbody>
+            </table>
+        </div>
+    </div>
+
+    <div id="rightCol">
+        <!-- DOANH THU CHỦ -->
+        <div id="ownerRevenueCard" class="card" style="display:none;">
+            <h2>💰 Quản Lý Quỹ Tiền Mặt (Chủ)</h2>
+            <div id="ownerDisplayBalance" style="font-size: 34px; font-weight:bold; color:var(--green); text-align:center; padding:15px 0;">0đ</div>
+            <div id="ownerWithdrawAction" style="display:none; margin-top:20px; border-top:1px solid #eee; padding-top:25px; text-align:center;">
+                <input type="number" id="withdrawAmtIn" style="width:200px; padding:12px; margin: 15px 0; border-radius:10px; border:1px solid #ddd;" placeholder="Số tiền rút...">
+                <button class="btn" style="background:var(--orange); color:white; padding:14px 40px;" onclick="handleOwnerWithdrawal()">XÁC NHẬN RÚT QUỸ</button>
+            </div>
+        </div>
+
+        <!-- GIỎ HÀNG -->
+        <div id="cartArea" class="card">
+            <h2>🛒 Giỏ Hàng & Thanh Toán</h2>
+            <div id="cartItemsList"></div>
+            <div id="cartFooter" style="display:none; border-top:2px solid #eee; margin-top:25px; padding-top:20px;">
+                <label>Hình thức thanh toán:</label>
+                <select id="paymentMethod" style="width:100%; padding:12px; margin: 10px 0; border-radius:10px; border:1px solid #ddd;" onchange="handleQRVisibility()">
+                    <option value="Tiền mặt">💵 Tiền mặt</option>
+                    <option value="Chuyển khoản">💳 Chuyển khoản (QR Code)</option>
+                </select>
+                <div id="qrBox" class="qr-box">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=ERP_V81_PAY" alt="QR">
+                    <button class="btn btn-add" style="margin-top:10px;" onclick="isQRTransferConfirmed=true; alert('Đã xác nhận!')">Tôi đã chuyển tiền xong</button>
+                </div>
+                <div style="display:flex; justify-content:space-between; font-size:24px; font-weight:bold; margin: 25px 0;">
+                    <span>TỔNG CỘNG:</span><span id="cartTotalDisp" style="color:var(--red)">0</span>đ
+                </div>
+                <button id="btnActionSubmit" class="btn btn-pay" onclick="handleOrderFinalSubmit()"></button>
+            </div>
+            <p id="guestMsgDisplay" style="text-align:center; color:#999; padding:30px;">Đăng nhập để mua hàng.</p>
+        </div>
+
+        <!-- LỊCH SỬ BILL -->
+        <div id="historyArea" class="card" style="display:none;">
+            <h2>🧾 Nhật Ký Giao Dịch & Hóa Đơn</h2>
+            <div id="billHistoryContainer"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    const API_ENDPOINT = "http://localhost:8080/api";
+    
+    const MASTER_DATA = [
+        {id:"CRF-1001", name:"Thịt Bò Mỹ", price:220000, cost:150000, stock:100, imported:100, sold:12, hsd:"2026-12-31", discount:0, saleEndTime: null},
+        {id:"CRF-1002", name:"Sữa tươi Vinamilk", price:30000, cost:20000, stock:150, imported:150, sold:45, hsd:"2026-04-10", discount:0, saleEndTime: null},
+        {id:"CRF-1003", name:"Lavie 500ml", price:6000, cost:3000, stock:300, imported:300, sold:120, hsd:"2027-01-01", discount:0, saleEndTime: null},
+        {id:"CRF-1004", name:"Dầu ăn Neptune", price:55000, cost:40000, stock:80, imported:80, sold:8, hsd:"2026-12-31", discount:0, saleEndTime: null},
+        {id:"CRF-1005", name:"Bột giặt Omo", price:145000, cost:100000, stock:40, imported:40, sold:3, hsd:"2028-10-10", discount:0, saleEndTime: null},
+        {id:"CRF-1006", name:"Mì Hảo Hảo", price:4500, cost:3200, stock:500, imported:500, sold:250, hsd:"2027-02-15", discount:0, saleEndTime: null},
+        {id:"CRF-1007", name:"Oreo Socola", price:18000, cost:12000, stock:120, imported:120, sold:30, hsd:"2026-11-30", discount:0, saleEndTime: null},
+        {id:"CRF-1008", name:"Sunlight", price:32000, cost:22000, stock:60, imported:60, sold:5, hsd:"2027-05-05", discount:0, saleEndTime: null},
+        {id:"CRF-1009", name:"Trứng gà ta", price:35000, cost:25000, stock:100, imported:100, sold:22, hsd:"2026-04-12", discount:0, saleEndTime: null},
+        {id:"CRF-1010", name:"Bia Heineken", price:22000, cost:15000, stock:200, imported:200, sold:60, hsd:"2026-12-25", discount:0, saleEndTime: null},
+        {id:"CRF-1011", name:"Gạo Tám Thơm", price:125000, cost:90000, stock:50, imported:50, sold:4, hsd:"2027-06-01", discount:0, saleEndTime: null},
+        {id:"CRF-1012", name:"Twister Cam", price:12000, cost:8000, stock:90, imported:90, sold:18, hsd:"2026-10-10", discount:0, saleEndTime: null},
+        {id:"CRF-1013", name:"P/S 180g", price:30000, cost:20000, stock:70, imported:70, sold:9, hsd:"2027-12-01", discount:0, saleEndTime: null},
+        {id:"CRF-1014", name:"Xúc xích Đức Việt", price:48000, cost:35000, stock:110, imported:110, sold:28, hsd:"2026-07-30", discount:0, saleEndTime: null},
+        {id:"CRF-1015", name:"Sữa chua VNM", price:28000, cost:18000, stock:130, imported:130, sold:40, hsd:"2026-06-15", discount:0, saleEndTime: null},
+        {id:"CRF-1016", name:"Gift Lau sàn", price:38000, cost:25000, stock:65, imported:65, sold:11, hsd:"2027-08-08", discount:0, saleEndTime: null},
+        {id:"CRF-1017", name:"Cà phê G7", price:58000, cost:40000, stock:85, imported:85, sold:14, hsd:"2027-04-04", discount:0, saleEndTime: null},
+        {id:"CRF-1018", name:"Bless You", price:22000, cost:15000, stock:140, imported:140, sold:25, hsd:"2029-01-01", discount:0, saleEndTime: null},
+        {id:"CRF-1019", name:"Coca 1.5L", price:20000, cost:12000, stock:160, imported:160, sold:55, hsd:"2026-11-15", discount:0, saleEndTime: null},
+        {id:"CRF-1020", name:"Sandwich", price:25000, cost:15000, stock:45, imported:45, sold:20, hsd:"2026-04-10", discount:0, saleEndTime: null}
+    ];
+
+    let products = JSON.parse(localStorage.getItem('n6_p_v81')) || MASTER_DATA;
+    let bills = JSON.parse(localStorage.getItem('n6_b_v81')) || [];
+    let expenses = JSON.parse(localStorage.getItem('n6_e_v81')) || [];
+    let customUsers = JSON.parse(localStorage.getItem('n6_u_v81')) || [];
+    let totalAccumulatedRevenue = parseInt(localStorage.getItem('n6_ar_v81')) || 0;
+    let currentFundBalance = parseInt(localStorage.getItem('n6_fb_v81')) || 0;
+    
+    let activeUser = { role: 'GUEST' }, cart = [], isQRTransferConfirmed = false, authMode = 'login';
+
+    // --- MODULE: AUTHENTICATION ---
+    function toggleAuthMode(forced) {
+        authMode = forced || (authMode === 'login' ? 'reg' : 'login');
+        document.getElementById('authModal').style.display = 'flex';
+        document.getElementById('modalTitle').innerText = (authMode === 'login' ? "🔐 ĐĂNG NHẬP" : "📝 ĐĂNG KÝ");
+    }
+
+    function closeAuthModal() { document.getElementById('authModal').style.display = 'none'; }
+
+    async function handleSystemAuth() {
+        const u = document.getElementById('uIn').value, p = document.getElementById('pIn').value;
+        const checkCustom = customUsers.find(user => user.u === u && user.p === p);
+        if(checkCustom) return loginSuccess(u, u, checkCustom.r);
+
+        try {
+            const res = await fetch(`${API_ENDPOINT}${(authMode === 'login' ? '/login' : '/register')}`, {
+                method: 'POST', headers: {'Content-Type':'application/json'},
+                body: JSON.stringify({ username: u, password: p })
+            });
+            if (res.ok) {
+                if(authMode === 'reg') { alert("Thành công!"); toggleAuthMode('login'); return; }
+                const data = await res.json();
+                let role = 'KHÁCH HÀNG';
+                if(u === 'sieuthi') role = 'CHỦ'; else if(u === 'nv1') role = 'NHÂN VIÊN';
+                else if(u === 'kt1') role = 'KẾ TOÁN'; else if(u === 'kho1') role = 'KHO'; else if(u === 'admin') role = 'ADMIN';
+                loginSuccess(u, data.fullName, role);
+            } else alert("Sai thông tin!");
+        } catch (e) { alert("Offline Mode: Đã tự động đăng nhập tài khoản hệ thống."); }
+    }
+
+    function loginSuccess(u, name, role) {
+        activeUser = { name: name || u, role: role };
+        closeAuthModal(); applySystemPermissions();
+    }
+
+    function applySystemPermissions() {
+        const r = activeUser.role;
+        document.getElementById('roleBadge').innerText = `${activeUser.name} (${r})`;
+        document.getElementById('roleBadge').style.display = 'inline-block';
+        document.getElementById('guestDisplay').style.display = 'none';
+        document.getElementById('logoutBtn').style.display = 'block';
+        document.getElementById('guestMsgDisplay').style.display = 'none';
+
+        document.getElementById('adminPanel').style.display = (r === 'ADMIN' ? 'block' : 'none');
+        document.getElementById('ownerStatsArea').style.display = (r === 'CHỦ' ? 'block' : 'none');
+        document.getElementById('accountingArea').style.display = (['KẾ TOÁN','CHỦ'].includes(r) ? 'block' : 'none');
+        document.getElementById('ownerRevenueCard').style.display = (['CHỦ','KẾ TOÁN'].includes(r) ? 'block' : 'none');
+        document.getElementById('ownerWithdrawAction').style.display = (r === 'CHỦ' ? 'block' : 'none');
+        document.getElementById('ownerAddBtn').style.display = (r === 'CHỦ' ? 'inline-block' : 'none');
+        document.getElementById('hsdHeadCol').style.display = (['CHỦ','KHO'].includes(r) ? 'table-cell' : 'none');
+        document.getElementById('historyArea').style.display = (['CHỦ','NHÂN VIÊN','KẾ TOÁN'].includes(r) ? 'block' : 'none');
+
+        const btn = document.getElementById('btnActionSubmit');
+        if(r === 'NHÂN VIÊN') btn.innerText = "DUYỆT & IN HOÁ ĐƠN";
+        else if(r === 'CHỦ') btn.innerText = "THANH TOÁN NGAY";
+        else btn.innerText = "GỬI ĐƠN CHO NHÂN VIÊN";
+        btn.style.background = (r === 'KHÁCH HÀNG' ? "var(--blue)" : "var(--green)");
+
+        renderMasterProductTable(); calculateDetailedFinance(); renderBillHistoryUI(); renderAdminTable(); renderOwnerAnalytics();
+    }
+
+    // --- MODULE: PRODUCTS & TIMER BOT ---
+    function renderMasterProductTable() {
+        const query = document.getElementById('searchIn').value.toUpperCase();
+        const r = activeUser.role;
+        const now = Date.now();
+
+        document.getElementById('productTableBody').innerHTML = products.filter(p => p.name.toUpperCase().includes(query) || p.id.includes(query)).map(p => {
+            let actions = ``;
+            if(r === 'CHỦ') {
+                actions += `<button class="btn btn-edit" onclick="openOwnerEditModal('${p.id}')">⚙️ Sửa Giá & KM</button>`;
+            } else if(['NHÂN VIÊN','KHÁCH HÀNG'].includes(r) || r === 'ADMIN') {
+                actions += `<button class="btn btn-add" onclick="addItemToCart('${p.id}')">➕ Mua</button>`;
+            }
+            if(['CHỦ','KHO'].includes(r)) {
+                actions += `<button class="btn btn-stock" onclick="quickStockMod('${p.id}','NHẬP')">Nhập</button>`;
+                actions += `<button class="btn btn-stock" onclick="quickStockMod('${p.id}','XUẤT')" style="background:var(--red)">Xuất</button>`;
+            }
+            if(r === 'CHỦ') actions += `<span class="btn-del" onclick="handleDeleteProduct('${p.id}')">🗑️</span>`;
+
+            let hsdCell = '';
+            if(['CHỦ','KHO'].includes(r)) {
+                const today = new Date();
+                const expDate = new Date(p.hsd);
+                const diffDays = Math.ceil((expDate - today) / (1000 * 60 * 60 * 24));
+                let warning = (diffDays <= 30) ? `<br><span class="warning-text">⚠️ SẮP HẾT HẠN!</span>` : '';
+                hsdCell = `<td>${p.hsd || '---'} ${warning}</td>`;
+            }
+
+            let priceDisplay = `${p.price.toLocaleString()}đ`;
+            let timerHtml = '';
+
+            // LOGIC HIỂN THỊ TIMER KHUYẾN MÃI
+            if(p.discount > 0) {
+                const salePrice = p.price * (1 - p.discount/100);
+                priceDisplay = `<del style="color:#999; font-size:10px;">${p.price.toLocaleString()}đ</del><br><b>${salePrice.toLocaleString()}đ</b> <span class="sale-tag">-${p.discount}%</span>`;
+                
+                if (p.saleEndTime && p.saleEndTime > now) {
+                    const timeLeft = Math.floor((p.saleEndTime - now) / 1000);
+                    const h = Math.floor(timeLeft / 3600);
+                    const m = Math.floor((timeLeft % 3600) / 60);
+                    const s = timeLeft % 60;
+                    timerHtml = `<span class="timer-tag">⌛ HẾT GIẢM SAU: ${h}h ${m}m ${s}s</span>`;
+                }
+            }
+
+            return `<tr><td>${p.id}</td><td><b>${p.name}</b>${timerHtml}</td><td>${priceDisplay}</td><td>${p.stock}</td>${hsdCell}<td>${actions}</td></tr>`;
+        }).join('');
+        renderAuditTable();
+    }
+
+    // BOT tự động gỡ khuyến mãi khi hết giờ
+    function checkSaleExpirations() {
+        const now = Date.now();
+        let changed = false;
+        products.forEach(p => {
+            if (p.discount > 0 && p.saleEndTime && p.saleEndTime <= now) {
+                p.discount = 0;
+                p.saleEndTime = null;
+                changed = true;
+                console.log(`Hệ thống: Đã gỡ khuyến mãi cho ${p.name} do hết hạn.`);
+            }
+        });
+        if (changed) {
+            saveAndSyncAll();
+        } else {
+            renderMasterProductTable(); // Cập nhật đồng hồ đếm ngược mỗi giây
+        }
+    }
+
+    // --- MODULE: ANALYTICS (CHỦ) ---
+    function renderOwnerAnalytics() {
+        const sortedProducts = [...products].sort((a, b) => b.sold - a.sold);
+        const top5 = sortedProducts.slice(0, 5);
+        document.getElementById('bestSellersList').innerHTML = top5.map(p => `
+            <li style="margin-bottom: 8px;">${p.name} <span style="float:right; color:var(--blue)">SL: ${p.sold}</span></li>
+        `).join('');
+
+        const totalExpense = expenses.reduce((acc, curr) => acc + curr.amount, 0);
+        const maxVal = Math.max(totalAccumulatedRevenue, totalExpense, 1000000);
+        
+        const incomeHeight = (totalAccumulatedRevenue / maxVal) * 100;
+        const expenseHeight = (totalExpense / maxVal) * 100;
+
+        document.getElementById('financeChart').innerHTML = `
+            <div class="chart-bar bar-income" style="height: ${incomeHeight}%">
+                <span class="chart-value">${totalAccumulatedRevenue.toLocaleString()}đ</span>
+                <span class="chart-label">DOANH THU</span>
+            </div>
+            <div class="chart-bar bar-expense" style="height: ${expenseHeight}%">
+                <span class="chart-value">${totalExpense.toLocaleString()}đ</span>
+                <span class="chart-label">CHI PHÍ</span>
+            </div>
+        `;
+    }
+
+    function openOwnerEditModal(id) {
+        const p = products.find(x => x.id === id);
+        document.getElementById('editTargetId').value = p.id;
+        document.getElementById('editNameLabel').innerText = "Đang chỉnh sửa: " + p.name;
+        document.getElementById('editPriceInput').value = p.price;
+        document.getElementById('editSaleInput').value = p.discount || 0;
+        document.getElementById('editSaleDurationInput').value = ""; 
+        document.getElementById('ownerEditModal').style.display = 'flex';
+    }
+
+    function saveOwnerProductEdits() {
+        const id = document.getElementById('editTargetId').value;
+        const p = products.find(x => x.id === id);
+        p.price = parseInt(document.getElementById('editPriceInput').value);
+        p.discount = parseInt(document.getElementById('editSaleInput').value);
+        
+        // Cập nhật thời gian kết thúc khuyến mãi
+        const hours = parseFloat(document.getElementById('editSaleDurationInput').value);
+        if (p.discount > 0 && !isNaN(hours) && hours > 0) {
+            p.saleEndTime = Date.now() + (hours * 3600 * 1000);
+        } else if (p.discount === 0) {
+            p.saleEndTime = null;
+        }
+
+        saveAndSyncAll();
+        document.getElementById('ownerEditModal').style.display = 'none';
+    }
+
+    function updateFinancePreview() {
+        const cost = parseInt(document.getElementById('addImportPrice').value) || 0;
+        const qty = parseInt(document.getElementById('addQtyInput').value) || 0;
+        document.getElementById('previewExpense').innerText = (cost * qty).toLocaleString();
+    }
+
+    function executeSaveProduct() {
+        const id = document.getElementById('addIdInput').value, name = document.getElementById('addNameInput').value, cost = parseInt(document.getElementById('addImportPrice').value), sell = parseInt(document.getElementById('addPriceInput').value), qty = parseInt(document.getElementById('addQtyInput').value), hsd = document.getElementById('addHsdInput').value;
+        if(!id || !name || isNaN(cost) || !hsd) return alert("Nhập đủ thông tin!");
+        const totalCost = cost * qty;
+        products.push({ id, name, price: sell, cost, stock: qty, imported: qty, sold: 0, hsd, discount: 0, saleEndTime: null });
+        currentFundBalance -= totalCost;
+        expenses.unshift({ time: new Date().toLocaleString(), note: `Nhập hàng: ${name}`, amount: totalCost });
+        saveAndSyncAll();
+        document.getElementById('addItemModal').style.display = 'none';
+    }
+
+    function quickStockMod(pid, type) {
+        const p = products.find(x => x.id === pid);
+        const q = parseInt(prompt(`SL ${type}:`), 10);
+        if(!q || q <= 0) return;
+        if(type === 'NHẬP') {
+            p.stock += q; p.imported += q;
+            const totalCost = (p.cost || 0) * q;
+            currentFundBalance -= totalCost;
+            expenses.unshift({ time: new Date().toLocaleString(), note: `Nhập thêm: ${p.name}`, amount: totalCost });
+            p.hsd = prompt("Cập nhật HSD mới:", p.hsd);
+        } else { if(q > p.stock) return alert("Hết!"); p.stock -= q; }
+        saveAndSyncAll();
+    }
+
+    function saveAndSyncAll() {
+        localStorage.setItem('n6_p_v81', JSON.stringify(products));
+        localStorage.setItem('n6_b_v81', JSON.stringify(bills));
+        localStorage.setItem('n6_e_v81', JSON.stringify(expenses));
+        localStorage.setItem('n6_ar_v81', totalAccumulatedRevenue);
+        localStorage.setItem('n6_fb_v81', currentFundBalance);
+        applySystemPermissions();
+    }
+
+    function calculateDetailedFinance() {
+        document.getElementById('totalAccumulatedRevenueDisp').innerText = totalAccumulatedRevenue.toLocaleString() + "đ";
+        document.getElementById('accNetBalanceDisp').innerText = currentFundBalance.toLocaleString() + "đ";
+        document.getElementById('ownerDisplayBalance').innerText = currentFundBalance.toLocaleString() + "đ";
+        document.getElementById('accExpenseTable').innerHTML = expenses.map(e => `
+            <tr><td>${e.time}</td><td>${e.note}</td><td style="color:red">-${e.amount.toLocaleString()}đ</td></tr>
+        `).join('');
+    }
+
+    function handleResetAccumulatedRevenue() { if(confirm("Reset?")) { totalAccumulatedRevenue = 0; saveAndSyncAll(); } }
+
+    function handleOwnerWithdrawal() {
+        const val = parseInt(document.getElementById('withdrawAmtIn').value, 10);
+        if(isNaN(val) || val <= 0 || val > currentFundBalance) return alert("Lỗi!");
+        currentFundBalance -= val;
+        expenses.unshift({ time: new Date().toLocaleString(), note: "Rút quỹ", amount: val });
+        saveAndSyncAll();
+    }
+
+    // --- MODULE: GIỎ HÀNG ---
+    function addItemToCart(id) {
+        if(activeUser.role === 'GUEST') return toggleAuthMode('login');
+        const p = products.find(x => x.id === id); if(p.stock <= 0) return alert("Hết!");
+        const ex = cart.find(x => x.id === id);
+        if(ex) ex.qty++; else cart.push({...p, qty: 1});
+        updateCartUI();
+    }
+
+    function updateCartUI() {
+        const foot = document.getElementById('cartFooter');
+        foot.style.display = cart.length ? 'block' : 'none';
+        let totalVal = 0;
+        document.getElementById('cartItemsList').innerHTML = cart.map(i => {
+            const finalPrice = i.price * (1 - (i.discount||0)/100);
+            totalVal += (finalPrice * i.qty);
+            return `<div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px dashed #ddd;">
+                <span>${i.name} (x${i.qty})</span>
+                <b>${(finalPrice*i.qty).toLocaleString()}đ 
+                   <span style="color:red; cursor:pointer; margin-left:15px; font-size:16px;" onclick="removeFromCart('${i.id}')">✖</span>
+                </b>
+            </div>`;
+        }).join('');
+        document.getElementById('cartTotalDisp').innerText = totalVal.toLocaleString();
+    }
+
+    function removeFromCart(id) {
+        cart = cart.filter(x => x.id !== id);
+        updateCartUI();
+    }
+
+    function handleOrderFinalSubmit() {
+        if(document.getElementById('paymentMethod').value === 'Chuyển khoản' && !isQRTransferConfirmed) return alert("Quét QR!");
+        const cleanTotal = parseInt(document.getElementById('cartTotalDisp').innerText.replace(/[^\d]/g, ''), 10);
+        const isOfficial = ['NHÂN VIÊN','CHỦ'].includes(activeUser.role);
+        const billObj = { id: Date.now(), total: cleanTotal, time: new Date().toLocaleString(), status: isOfficial ? "THÀNH CÔNG" : "CHỜ DUYỆT", items: [...cart] };
+        bills.unshift(billObj);
+        if(isOfficial) {
+            totalAccumulatedRevenue += cleanTotal; currentFundBalance += cleanTotal;
+            billObj.items.forEach(i => {
+                const t = products.find(p => p.id === i.id);
+                if(t) { t.stock -= i.qty; t.sold += i.qty; }
+            });
+            handlePrintBill(billObj.id);
+        } else {
+            alert("Đơn hàng đã được gửi thành công! Vui lòng đợi nhân viên phê duyệt.");
+        }
+        cart = []; isQRTransferConfirmed = false; saveAndSyncAll();
+    }
+
+    function renderBillHistoryUI() {
+        document.getElementById('billHistoryContainer').innerHTML = bills.map(b => `
+            <div class="bill-card">
+                <b>#${b.id}</b> | <b>${b.total.toLocaleString()}đ</b> | ${b.status}
+                <div style="font-size:10px; margin-top:5px;">${b.items.map(i => i.name).join(', ')}</div>
+                <div style="margin-top:10px;">
+                    <button class="btn" style="background:var(--blue);color:white;" onclick="handlePrintBill(${b.id})">🖨️ IN</button>
+                    ${(activeUser.role==='NHÂN VIÊN' && b.status==='CHỜ DUYỆT') ? `<button class="btn btn-add" onclick="approveBill(${b.id})">DUYỆT</button>` : ''}
+                    ${(['KẾ TOÁN','CHỦ'].includes(activeUser.role)) ? `<span class="btn-del" onclick="handleDeleteBill(${b.id})">🗑️</span>` : ''}
+                </div>
+            </div>
+        `).join('');
+    }
+
+    function handlePrintBill(id) {
+        const b = bills.find(x => x.id === id); if(!b) return;
+        document.getElementById('pID').innerText = b.id; document.getElementById('pTime').innerText = b.time;
+        document.getElementById('pTotal').innerText = b.total.toLocaleString();
+        document.getElementById('pItemsBody').innerHTML = b.items.map(i => `<tr><td>${i.name}</td><td>${i.qty}</td><td>${i.price.toLocaleString()}</td><td>${(i.price*i.qty).toLocaleString()}</td></tr>`).join('');
+        window.print();
+    }
+
+    function approveBill(id) {
+        const b = bills.find(x => x.id === id); b.status = "THÀNH CÔNG";
+        totalAccumulatedRevenue += b.total; currentFundBalance += b.total;
+        b.items.forEach(i => {
+            const t = products.find(p => p.id === i.id);
+            if(t) { t.stock -= i.qty; t.sold += i.qty; }
+        });
+        saveAndSyncAll(); handlePrintBill(id);
+    }
+
+    function renderAdminTable() {
+        const list = [{n:'sieuthi',r:'CHỦ',s:1},{n:'nv1',r:'NV',s:1},{n:'kt1',r:'KT',s:0},{n:'kho1',r:'KHO',s:0},{n:'admin',r:'ADM',s:1}, ...customUsers.map(u => ({n:u.u, r:u.r, s:0}))];
+        document.getElementById('adminUserTable').innerHTML = list.map(u => `<tr><td><b>${u.n}</b></td><td>${u.r}</td><td>${u.s?'Online':'Off'}</td><td><button class="btn">Xóa</button></td></tr>`).join('');
+    }
+
+    function handleQRVisibility() { document.getElementById('qrBox').style.display = (document.getElementById('paymentMethod').value === 'Chuyển khoản' ? 'block' : 'none'); isQRTransferConfirmed = false; }
+    function renderAuditTable() { document.getElementById('auditTableBody').innerHTML = products.map(p => `<tr><td>${p.name}</td><td>${p.imported}</td><td>${p.sold}</td><td><b>${p.stock}</b></td></tr>`).join(''); }
+    function handleDeleteProduct(id) { if(confirm("Xóa?")) { products = products.filter(x => x.id !== id); saveAndSyncAll(); } }
+    function handleDeleteBill(id) { if(confirm("Xóa?")) { bills = bills.filter(x => x.id !== id); localStorage.setItem('n6_b_v81', JSON.stringify(bills)); applySystemPermissions(); } }
+
+    window.onload = () => { 
+        renderMasterProductTable(); 
+        calculateDetailedFinance(); 
+        // Bắt đầu chạy bot kiểm tra khuyến mãi mỗi giây
+        setInterval(checkSaleExpirations, 1000);
+    };
+</script>
+</body>
+</html>
